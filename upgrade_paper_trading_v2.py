@@ -34,15 +34,14 @@ def analyze(df):
     else: signal="NEUTRAL"
     reasons=[]
     for c in conditions:
-        if signal=="BULLISH": passed=c["bullish"]
-        elif signal=="BEARISH": passed=c["bearish"]
-        else: passed=(c["bullish"] or c["bearish"])
-        reasons.append(("PASS: " if passed else "NOT MET: ")+c["name"]+" — "+c["value"])
+        reasons.append(("LONG PASS: " if c["bullish"] else "LONG FAIL: ")+c["name"]+" — "+c["value"])
+        reasons.append(("SHORT PASS: " if c["bearish"] else "SHORT FAIL: ")+c["name"]+" — "+c["value"])
     if signal=="WATCH":
-        if not adx_ok: reasons.append("ENTRY BLOCKED: ADX is below the required 20 trend-strength threshold")
-        if not bull_rsi and not bear_rsi: reasons.append("ENTRY BLOCKED: RSI is outside both permitted entry ranges")
+        reasons.append("NO ENTRY: trend alignment exists, but at least one strength/momentum filter blocks the setup")
     elif signal=="NEUTRAL":
-        reasons.append("ENTRY BLOCKED: EMA trend and directional movement are not aligned")
+        reasons.append("NO ENTRY: neither EMA trend plus directional movement combination is aligned")
+    elif signal=="WARMING_UP":
+        reasons.append("NO ENTRY: indicator history is incomplete")
     return {"signal":signal,"indicators":v,"reasons":reasons,"conditions":conditions}
 '''
 
