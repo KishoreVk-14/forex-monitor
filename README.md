@@ -73,3 +73,22 @@ See `.env.example`. Defaults: 15-minute bars, 900-second collection interval, 50
 - FX spot feeds can differ by provider. Weekends, holidays and API outages may leave stale latest-candle times.
 - Market-data licensing controls whether raw prices or derived data may be displayed publicly or commercially. A public source-code repository does not grant data-display rights.
 - The SQLite database and collected data are local runtime files and are excluded from Git.
+
+
+## Upgrade an existing EC2 deployment to Forex Monitor V2
+
+The V2 dashboard upgrade preserves the existing `.env`, SQLite database, collector service and signal rules. From the existing project directory:
+
+```bash
+cd ~/forex-monitor
+git pull origin main
+python3 upgrade_dashboard_v2.py
+source venv/bin/activate
+python -m compileall -q app
+python -m unittest discover -s tests -v
+sudo systemctl restart forex-dashboard
+sudo systemctl status forex-dashboard --no-pager
+curl -s http://127.0.0.1:8050/health
+```
+
+The dashboard refreshes its market snapshot every 60 seconds. Chart.js is loaded from a CDN, so chart rendering requires browser internet access. The application remains read-only and does not change the collector or trading signal rules.
