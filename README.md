@@ -130,3 +130,8 @@ curl -s http://127.0.0.1:8050/api/paper/summary
 ```
 
 The dashboard adds a Paper trading tab with virtual equity, realized/unrealized P&L, open positions, closed trade history, win rate and profit factor. The collector and existing SQLite candle history are preserved. The paper trader stores its own tables in the existing SQLite database.
+
+
+## Paper trading diagnostics and filters
+
+The strategy monitor reports LONG PASS/FAIL and SHORT PASS/FAIL for EMA trend, directional movement, ADX and RSI. These diagnostics explain the existing unchanged entry gates; they do not alter the signal classification. The Paper trading workspace supports currency-pair and entry-date filters across open positions and trade history. The paper service scans its database every 30 seconds; the collector stores closed 15-minute candles on its 15-minute schedule, so a new trade can only be evaluated after a newly stored closed candle. The dashboard refreshes its display every 60 seconds.
