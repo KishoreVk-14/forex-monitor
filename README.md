@@ -135,3 +135,38 @@ The dashboard adds a Paper trading tab with virtual equity, realized/unrealized 
 ## Paper trading diagnostics and filters
 
 The strategy monitor reports LONG PASS/FAIL and SHORT PASS/FAIL for EMA trend, directional movement, ADX and RSI. These diagnostics explain the existing unchanged entry gates; they do not alter the signal classification. The Paper trading workspace supports currency-pair and entry-date filters across open positions and trade history. The paper service scans its database every 30 seconds; the collector stores closed 15-minute candles on its 15-minute schedule, so a new trade can only be evaluated after a newly stored closed candle. The dashboard refreshes its display every 60 seconds.
+
+## Optional live-price monitoring (hybrid mode)
+
+This upgrade adds a separate Twelve Data `/price` quote poller. It stores quotes in `fx_live_prices`; it does not update or replace the completed 15-minute OHLC candle table. The dashboard can display the latest quote separately from the candle close used by EMA/RSI/ADX and entry signals.
+
+The paper trader checks fresh quotes (maximum age 3 minutes) against open simulated positions for live stop-loss/take-profit monitoring. New entries continue to use only the existing completed-candle BULLISH/BEARISH strategy. No broker connection or real order is introduced.
+
+Apply after the dashboard and paper-trading upgrades are installed:
+
+```bash
+cd ~/forex-monitor
+git fetch origin
+git checkout feature/live-price-monitoring
+git pull --ff-only origin feature/live-price-monitoring
+python3 upgrade_live_price_monitor.py
+source venv/bin/activate
+python -m compileall -q app
+python -m unittest discover -s tests -v
+sudo cp systemd/forex-live-prices.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl restart forex-dashboard
+sudo systemctl restart forex-paper-trader
+```
+
+**API quota check before enabling live quotes:** the service makes one additional `/price` request per configured pair per polling cycle (six requests per cycle for the default watchlist). The included systemd unit is deliberately not enabled automatically. Check the Twelve Data plan's endpoint/credit limits first, then start it:
+
+```bash
+sudo systemctl enable --now forex-live-prices
+sudo systemctl status forex-live-prices --no-pager
+curl -fsS http://127.0.0.1:8050/api/live-prices
+```
+
+Set `FOREX_LIVE_PRICE_POLL_SECONDS` in the service environment to tune polling (minimum 30 seconds; default 60). More frequent polling uses more API credits. The dashboard marks quotes older than 3 minutes as stale; the paper trader ignores stale quotes for live exits and falls back to candle-based processing. Provider quote availability, latency and entitlement depend on the Twelve Data account. If the plan does not include the `/price` endpoint or sufficient credits, leave the live-price service stopped; the existing candle-based system continues to work.
+
+The live quote feed is for monitoring and simulation only. It is not an executable broker bid/ask feed, and simulated fills still use simplified spread assumptions.
