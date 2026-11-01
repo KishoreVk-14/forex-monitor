@@ -116,6 +116,7 @@ Install on an existing EC2 deployment:
 cd ~/forex-monitor
 git pull --ff-only origin main
 python3 upgrade_paper_trading.py
+python3 patch_paper_trading.py
 source venv/bin/activate
 python -m compileall -q app
 python -m unittest discover -s tests -v
